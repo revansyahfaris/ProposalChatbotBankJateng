@@ -1,3 +1,10 @@
+# --- BACKEND ---
 backend/node_modules/
 backend/chroma_data/
 backend/.env
+
+# --- FRONTEND ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
