@@ -1,13 +1,24 @@
-# --- BACKEND ---
-backend/node_modules/
-backend/chroma_data/
-backend/.env
+# Dependencies
+node_modules/
 
-# --- FRONTEND ---
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
+# Build output
+dist/
 
-# --- ROOT ---
-node_modules/ 
+# Environment
+.env
+.env.local
+
+# Docker
+chroma_data/
+
+# Logs
+*.log
+.manus-logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

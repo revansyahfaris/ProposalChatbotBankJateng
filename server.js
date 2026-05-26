@@ -39,7 +39,7 @@ checkConnection();
 
 if (process.env.NODE_ENV === 'production') {
   // Arahkan ke folder build output Vite milik frontend
-  const frontendPath = path.join(__dirname, '../frontend/dist/public');
+  const frontendPath = path.join(__dirname, 'dist/public');
   app.use(express.static(frontendPath));
 
   // Catch-all route untuk React Router (Wouter)
