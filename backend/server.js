@@ -2,12 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import pool from './config/db.js'; // Pastikan pakai .js
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Import Routes
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -32,10 +37,21 @@ const checkConnection = async () => {
 };
 checkConnection();
 
-// Endpoint Percobaan
-app.get('/', (req, res) => {
-  res.send('Server Bank Jateng sudah jalan!');
-});
+if (process.env.NODE_ENV === 'production') {
+  // Arahkan ke folder build output Vite milik frontend
+  const frontendPath = path.join(__dirname, '../frontend/dist/public');
+  app.use(express.static(frontendPath));
+
+  // Catch-all route untuk React Router (Wouter)
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(frontendPath, 'index.html'));
+  });
+} else {
+  // Hanya tampil di mode development
+  app.get('/', (req, res) => {
+    res.send('Server API Bank Jateng sedang berjalan di mode Development!');
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
