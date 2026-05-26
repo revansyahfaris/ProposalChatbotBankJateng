@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService';
 
 /**
  * Sign Up User Page
@@ -101,16 +102,43 @@ export default function SignupUser() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (validateForm()) {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
+      setErrors({});
+
+      try {
+        const payload: any = {
+          fullName: formData.fullName,
+          full_name: formData.fullName,
+          username: formData.username, 
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          nik: formData.nik,
+          identity_number: formData.nik,
+        };
+
+        const response = await authService.signup(payload);
+
+        if (response.user || response.message === 'User berhasil didaftarkan') {
+          setSuccessMessage('Akun berhasil dibuat! Mengalihkan ke login...');
+
+          setTimeout(() => {
+            setLocation('/login');
+          }, 1500);
+        } else {
+          setErrors({
+            email: response.message || 'Gagal mendaftarkan akun. Silakan periksa kembali.'
+          });
+      }
+    } catch (err) {
+        setErrors({
+          email: 'Terjadi kesalahan saat mendaftarkan akun. Silakan coba lagi.'
+        });
+      } finally {
         setLoading(false);
-        setSuccessMessage('Akun berhasil dibuat! Anda akan diarahkan ke halaman login...');
-        setTimeout(() => {
-          setLocation('/login');
-        }, 1500);
-      }, 1500);
+      }
     }
   };
 
@@ -131,14 +159,14 @@ export default function SignupUser() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white flex flex-col">
       {/* Header with Bank Logo */}
-      <div className="header-bank bg-linear-to-r from-blue-600 to-blue-700 py-6 shadow-md">
+      <div className="header-bank fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-blue-600 to-blue-700 py-6 shadow-md">
         <div className="container mx-auto flex items-center justify-center px-4">
           <img src="/images/logo-light.png" alt="Bank Jateng" className="h-12 w-auto" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="pt-28 flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl">
           {/* Signup Card */}
           <div className="bg-white rounded-3xl shadow-xl p-8 border-t-4 border-primary">
@@ -165,15 +193,15 @@ export default function SignupUser() {
                     Nama Lengkap
                   </label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
                       type="text"
                       name="fullName"
-                      placeholder="Muhammad Faris"
+                      placeholder="nama lengkap anda"
                       value={formData.fullName}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`input-field pl-12 py-3 rounded-lg border-2 ${
+                      className={`pl-9 py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                         errors.fullName ? 'border-red-500' : ''
                       }`}
                     />
@@ -193,11 +221,11 @@ export default function SignupUser() {
                   <Input
                     type="text"
                     name="username"
-                    placeholder="farisrevan13"
+                    placeholder="nama pengguna"
                     value={formData.username}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className={`input-field py-3 rounded-lg border-2 ${
+                    className={`input-field py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                       errors.username ? 'border-red-500' : ''
                     }`}
                   />
@@ -223,7 +251,7 @@ export default function SignupUser() {
                       value={formData.email}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`input-field px-4 py-3 rounded-lg border-2 ${
+                      className={`input-field px-4 py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                         errors.email ? 'border-red-500' : ''
                       }`}
                     />
@@ -243,11 +271,11 @@ export default function SignupUser() {
                   <Input
                     type="tel"
                     name="phone"
-                    placeholder="+62812345678"
+                    placeholder="+62-- ---- ----"
                     value={formData.phone}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className={`input-field py-3 rounded-lg border-2 ${
+                    className={`input-field py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                       errors.phone ? 'border-red-500' : ''
                     }`}
                   />
@@ -269,11 +297,11 @@ export default function SignupUser() {
                     <Input
                       type="text"
                       name="nik"
-                      placeholder="1234567890123456"
+                      placeholder="16 digit NIK Anda"
                       value={formData.nik}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`input-field px-4 py-3 rounded-lg border-2 ${
+                      className={`input-field px-4 py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                         errors.nik ? 'border-red-500' : ''
                       }`}
                     />
@@ -298,7 +326,7 @@ export default function SignupUser() {
                       value={formData.password}
                       onChange={handleInputChange}
                       disabled={loading}
-                      className={`input-field px-4 pr-12 py-3 rounded-lg border-2 ${
+                      className={`input-field px-4 pr-12 py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                         errors.password ? 'border-red-500' : ''
                       }`}
                     />
@@ -350,7 +378,7 @@ export default function SignupUser() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className={`input-field px-4 pr-12 py-3 rounded-lg border-2 ${
+                    className={`input-field px-4 pr-12 py-3 rounded-lg border-2 placeholder:text-gray-400 ${
                       errors.confirmPassword ? 'border-red-500' : ''
                     }`}
                   />

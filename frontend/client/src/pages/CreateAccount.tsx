@@ -3,6 +3,7 @@ import { ArrowLeft, Check, AlertCircle, Loader2, ArrowRight } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService';
 
 /**
  * Create Account Page
@@ -15,6 +16,7 @@ export default function CreateAccount() {
   const [selectedType, setSelectedType] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [createdAccountNumber, setCreatedAccountNumber] = useState('');
 
   const [formData, setFormData] = useState({
     accountName: '',
@@ -111,13 +113,37 @@ export default function CreateAccount() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setLoading(false);
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+        const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+        const res = await fetch(`${API}/user/accounts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authService.getToken()}`
+            },
+            body: JSON.stringify({
+                account_type: formData.accountType,
+                initial_balance: Number(formData.initialBalance)
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            setErrors({ submit: err.message || 'Gagal membuat rekening' });
+            return;
+        }
+
+        const data = await res.json();
+        setCreatedAccountNumber(data.account.account_number); // simpan nomor rekening
         setStep('success');
-      }, 1500);
+
+    } catch {
+        setErrors({ submit: 'Gagal menghubungi server' });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -375,7 +401,7 @@ export default function CreateAccount() {
                     </div>
                     <div className="flex justify-between pt-3 border-t border-green-200">
                       <span className="text-gray-700">Nomor Rekening:</span>
-                      <span className="font-mono font-semibold text-gray-900">1234567890</span>
+                      <span className="font-mono font-semibold text-gray-900">{createdAccountNumber}</span>
                     </div>
                   </div>
                 </div>

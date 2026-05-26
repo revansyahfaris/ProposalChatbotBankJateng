@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Plus, LogOut, Bell, Settings, Send, Download, ArrowUpRight, ArrowDownLeft, MoreVertical, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService';
 
 /**
  * Dashboard User Page
@@ -10,43 +11,56 @@ import { useLocation } from 'wouter';
  */
 export default function DashboardUser() {
   const [, setLocation] = useLocation();
-  const [userName, setUserName] = useState('User');
-  const [userEmail, setUserEmail] = useState('user@example.com');
+  const [userName, setUserName] = useState('Memuat...');
+  const [userEmail, setUserEmail] = useState('Memuat...');
   const [showBalance, setShowBalance] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
 
   useEffect(() => {
-    const savedName = localStorage.getItem('userName');
-    const savedEmail = localStorage.getItem('userEmail');
-    if (savedName) setUserName(savedName);
-    if (savedEmail) setUserEmail(savedEmail);
-  }, []);
+    const verifyWithServer = async () => {
+      const token = authService.getToken();
+      if (!token) { setLocation('/login'); return; }
+
+      const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api';
+
+      try {
+        const res = await fetch(`${API}/user/dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          authService.logout();
+          setLocation('/login');
+          return;
+        }
+
+        const data = await res.json();
+
+        // Set nama user
+        const currentUser = authService.getCurrentUser();
+        setUserName(currentUser?.full_name || currentUser?.username || 'Pengguna');
+        setUserEmail(currentUser?.email || 'Email tidak tersedia');
+
+        // Set rekening dari database
+        setAccounts(data.daftar_rekening || []);
+        setLoadingAccounts(false);
+
+      } catch {
+        setLocation('/login');
+      }
+    };
+
+    verifyWithServer();
+  }, [setLocation]);
+
   const [chatMessages, setChatMessages] = useState<Array<{ type: 'user' | 'bot'; message: string }>>([
     { type: 'bot', message: 'Halo! Saya adalah Asisten Virtual Bank Jateng. Ada yang bisa saya bantu? 😊' }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   
-  const [accounts] = useState([
-    {
-      id: 1,
-      type: 'BIMA',
-      balance: 6966000,
-      accountNumber: '6767',
-      cardholderName: 'Kardaluwarsa',
-      expiryDate: '08/31',
-      variant: 'standard',
-    },
-    {
-      id: 2,
-      type: 'BIMA PLATINUM',
-      balance: 67420000,
-      accountNumber: '7890',
-      cardholderName: 'Kardaluwarsa',
-      expiryDate: '08/31',
-      variant: 'platinum',
-    },
-  ]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
   const [transactions] = useState([
     { id: 1, name: 'Transfer ke Budi', amount: -500000, date: '2024-01-15', type: 'transfer' },
@@ -55,7 +69,7 @@ export default function DashboardUser() {
     { id: 4, name: 'Belanja Online', amount: -1200000, date: '2024-01-05', type: 'shopping' },
   ]);
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -137,14 +151,13 @@ export default function DashboardUser() {
                 <p className="text-xs text-gray-600">{userEmail}</p>
               </div>
               <div className="w-9 h-9 bg-linear-to-br from-primary to-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                {userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
             </div>
 
             <button
               onClick={() => {
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
+                authService.logout();
                 setLocation('/login');
               }}
               className="p-2 hover:bg-white/10 rounded-full transition-colors group"
@@ -189,38 +202,40 @@ export default function DashboardUser() {
           {/* Accounts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             {/* Account Cards */}
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                className="bg-linear-to-br from-red-900 to-red-700 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group min-h-56 flex flex-col justify-between overflow-hidden"
-              >
-                {/* Card Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-red-100 truncate">
-                      {account.cardholderName}
-                    </p>
-                    <p className="text-xs text-red-100 mt-1">{account.expiryDate}</p>
-                  </div>
-                  <button className="p-2 hover:bg-white/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 shrink-0 ml-2">
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Balance */}
-                <p className="text-3xl font-display font-bold mb-auto line-clamp-2">
-                  {showBalance ? formatCurrency(account.balance) : '••••••••'}
-                </p>
-
-                {/* Card Footer */}
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/20">
-                  <p className="font-mono text-sm tracking-widest truncate">
-                    **** **** **** {account.accountNumber}
-                  </p>
-                  <p className="text-xs font-display font-bold shrink-0">{account.type}</p>
-                </div>
+            {loadingAccounts ? (
+              <div className="col-span-3 flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-            ))}
+            ) : accounts.length === 0 ? (
+              <div className="col-span-3 text-center py-8 text-gray-500">
+                Belum ada rekening. Tambahkan rekening baru.
+              </div>
+            ) : (
+              accounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="bg-linear-to-br from-red-900 to-red-700 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group min-h-56 flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-sm font-medium text-red-100">{userName}</p>
+                      <p className="text-xs text-red-200 mt-1">{account.account_type}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-3xl font-display font-bold mb-auto">
+                    {showBalance ? formatCurrency(Number(account.balance)) : '••••••••'}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/20">
+                    <p className="font-mono text-sm tracking-widest">
+                      **** **** **** {account.account_number?.slice(-4)}
+                    </p>
+                    <p className="text-xs font-display font-bold">{account.account_type}</p>
+                  </div>
+                </div>
+              ))
+            )}
 
             {/* Add New Account Button */}
             <button

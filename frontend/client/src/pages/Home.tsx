@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { ChevronRight, ArrowRight, Shield, Zap, Users, Lock, CreditCard, TrendingUp, Smartphone, Globe } from "lucide-react";
+import { useEffect, useState } from "react";
+import authService from "@/services/authService";
 
 /**
  * Home Page - Landing Page
@@ -9,6 +11,19 @@ import { ChevronRight, ArrowRight, Shield, Zap, Users, Lock, CreditCard, Trendin
  */
 export default function Home() {
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const token = authService.getToken();
+    const user = authService.getCurrentUser();
+
+    if (token && user) {
+      if (user.role === 'admin') {
+        setLocation('/dashboard-admin');
+      } else {
+        setLocation('/dashboard-user');
+      }
+    }
+  }, [setLocation]);
 
   const features = [
     {
@@ -70,7 +85,7 @@ export default function Home() {
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/images/logo-light.png" alt="Bank Jateng" className="h-10 w-auto" />
+            <img src="/images/logo-dark.png" alt="Bank Jateng" className="h-10 w-auto" />
 
           </div>
           <div className="flex items-center gap-4">

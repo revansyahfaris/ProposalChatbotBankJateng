@@ -10,12 +10,13 @@ import SignupUser from "./pages/SignupUser";
 import DashboardUser from "./pages/DashboardUser";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import CreateAccount from "./pages/CreateAccount";
+import Home from "./pages/Home";
 
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={LoginUser} />
+      <Route path="/" component={Home} />
       <Route path="/login" component={LoginUser} />
       <Route path="/login-admin" component={LoginAdmin} />
       <Route path="/signup" component={SignupUser} />

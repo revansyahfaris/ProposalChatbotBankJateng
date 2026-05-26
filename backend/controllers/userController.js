@@ -62,3 +62,44 @@ export const getDashboard = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+export const createAccount = async (req, res) => {
+    const { account_type, initial_balance } = req.body;
+
+    if (!account_type || initial_balance === undefined) {
+        return res.status(400).json({ message: 'Data tidak lengkap' });
+    }
+
+    try {
+        // 1. Ambil profile_id milik user yang login
+        const profile = await pool.query(
+            'SELECT id FROM user_profiles WHERE user_id = $1',
+            [req.user.id]
+        );
+
+        if (profile.rows.length === 0) {
+            return res.status(404).json({ message: 'Profil tidak ditemukan' });
+        }
+
+        const profileId = profile.rows[0].id;
+
+        // 2. Generate nomor rekening unik (10 digit)
+        const accountNumber = String(Date.now()).slice(-10);
+
+        // 3. Simpan ke database
+        const newAccount = await pool.query(
+            `INSERT INTO bank_accounts (profile_id, account_number, account_type, balance)
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [profileId, accountNumber, account_type, initial_balance]
+        );
+
+        res.status(201).json({
+            message: 'Rekening berhasil dibuat',
+            account: newAccount.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Create Account Error:', err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};

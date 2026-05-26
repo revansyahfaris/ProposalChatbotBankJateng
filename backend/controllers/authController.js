@@ -79,9 +79,11 @@ export const login = async (req, res) => {
         // 4. Kirim token ke Frontend
         res.json({
             token,
-            user: {
+            user: { 
                 id: user.rows[0].id,
                 username: user.rows[0].username,
+                email: user.rows[0].email,          // <-- Tambahkan ini
+                full_name: user.rows[0].full_name,  // <-- Tambahkan ini
                 role: user.rows[0].role
             }
         });

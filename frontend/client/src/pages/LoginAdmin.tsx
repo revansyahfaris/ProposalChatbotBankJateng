@@ -3,6 +3,7 @@ import { Eye, EyeOff, Lock, User, AlertCircle, CheckCircle2, Loader2, ArrowRight
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService';
 
 /**
  * Login Admin Page
@@ -45,35 +46,39 @@ export default function LoginAdmin() {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // Simulate 2FA requirement
-      if (!show2FAField) {
-        setShow2FAField(true);
-        setSuccessMessage('Verifikasi dua faktor telah dikirim ke email Anda');
-        setTimeout(() => {
-          setSuccessMessage('');
-        }, 3000);
-      } else if (!twoFACode) {
-        setError('Kode 2FA harus diisi');
+    
+    try {
+      const response = await authService.login({email, password});
+      
+      console.log('Full response:', response);
+      console.log('User role:', response.user?.role);
+
+      if (response.token) {
+        if (response.user?.role === 'admin') {
+
+          setSuccessMessage('Login berhasil! Mengalihkan ke dashboard...');
+
+          setTimeout(() => {
+            setLocation('/dashboard-admin');
+          }, 1500);
+        } else {
+          authService.logout();
+          setError('Akses ditolak. Hanya admin yang dapat masuk.');
+        }
       } else {
-        setSuccessMessage('Login berhasil! Anda akan dialihkan...');
-        // Save admin info to localStorage
-        const adminName = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
-        localStorage.setItem('adminEmail', email);
-        localStorage.setItem('adminName', adminName);
-        setTimeout(() => {
-          setLocation('/dashboard-admin');
-        }, 1500);
+        setError('Login gagal. Periksa kembali email dan kata sandi Anda.');
       }
-    }, 1000);
+    } catch (err) {
+      setError('Terjadi kesalahan saat mencoba login. Silakan coba lagi nanti.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800 flex flex-col">
       {/* Header with Admin Styling */}
-      <div className="header-admin bg-linear-to-r from-slate-800 to-slate-900 py-8 shadow-xl">
+      <div className="header-admin fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-slate-800 to-slate-900 py-8 shadow-xl">
         <div className="container mx-auto flex flex-col items-center justify-center px-4">
           <img src="/images/logo-light.png" alt="Bank Jateng" className="h-12 w-auto mb-3" />
           <p className="text-center text-sm text-slate-300 font-medium">Admin Portal</p>
@@ -82,7 +87,7 @@ export default function LoginAdmin() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="pt-42 flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Login Card */}
           <div className="bg-white rounded-3xl shadow-2xl p-8 border-t-4 border-slate-700">
@@ -108,7 +113,7 @@ export default function LoginAdmin() {
                   Email Admin
                 </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
                     type="email"
                     placeholder="admin@bankjateng.co.id"
@@ -118,7 +123,7 @@ export default function LoginAdmin() {
                       setError('');
                     }}
                     disabled={loading}
-                    className="input-field pl-12 py-3 rounded-lg border-2"
+                    className="pl-9 py-3 rounded-lg border-2 placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -138,7 +143,7 @@ export default function LoginAdmin() {
                       setError('');
                     }}
                     disabled={loading}
-                    className="input-field px-4 pr-12 py-3 rounded-lg border-2"
+                    className="pl-9 py-3 rounded-lg border-2 placeholder:text-gray-400"
                   />
                   <button
                     type="button"

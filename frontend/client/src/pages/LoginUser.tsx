@@ -3,6 +3,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, AlertCircle, CheckCircle2, Loader2
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService';
 
 /**
  * Login User Page
@@ -49,18 +50,24 @@ export default function LoginUser() {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // Extract name from email or use default
-      const userName = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userName', userName);
-      setSuccessMessage('Login berhasil! Anda akan dialihkan...');
-      setTimeout(() => {
-        setLocation('/dashboard-user');
-      }, 1500);
-    }, 1000);
+
+    try {
+      const response = await authService.login({email, password});
+
+      if (response.token) {
+        setSuccessMessage('Login berhasil! Mengalihkan...');
+
+        setTimeout(() => {
+          setLocation('/dashboard-user');
+        }, 1500);
+      } else {
+        setError(response.message || 'Login gagal. Periksa email dan kata sandi Anda.');
+      } 
+    } catch (err) {
+    setError('Terjadi kesalahan saat menghubungi server. Silakan coba lagi nanti.');
+    } finally { 
+    setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -70,12 +77,13 @@ export default function LoginUser() {
     // For now, show a demo notification
     setTimeout(() => {
       setLoading(false);
-      localStorage.setItem('userEmail', 'user@gmail.com');
-      localStorage.setItem('userName', 'Google User');
-      setSuccessMessage('Login Google berhasil! Mengalihkan...');
-      setTimeout(() => {
-        setLocation('/dashboard-user');
-      }, 1500);
+      const handleGoogleLogin = async () => {
+          setError('Login Google belum tersedia. Gunakan email dan kata sandi.');
+        };
+
+        const handleAppleLogin = async () => {
+          setError('Login Apple belum tersedia. Gunakan email dan kata sandi.');
+        };
     }, 1500);
   };
 
@@ -97,14 +105,14 @@ export default function LoginUser() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white flex flex-col">
       {/* Header with Bank Logo */}
-      <div className="header-bank bg-linear-to-r from-blue-600 to-blue-700 py-6 shadow-md">
+      <div className="header-bank fixed top-0 left-0 right-0 z-50 bg-linear-to-r from-blue-600 to-blue-700 py-6 shadow-md">
         <div className="container mx-auto flex items-center justify-center px-4">
           <img src="/images/logo-light.png" alt="Bank Jateng" className="h-12 w-auto" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="pt-28 flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Login Card */}
           <div className="bg-white rounded-3xl shadow-xl p-8 border-t-4 border-primary">

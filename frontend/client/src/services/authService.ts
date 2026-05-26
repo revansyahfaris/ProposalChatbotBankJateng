@@ -24,8 +24,10 @@ interface AuthResponse {
   user?: {
     id: string;
     email: string;
-    fullName: string;
+    fullName?: string;
+    full_name?: string;
     username: string;
+    role?: string;
   };
 }
 

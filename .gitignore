@@ -8,3 +8,6 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
+
+# --- ROOT ---
+node_modules/ 

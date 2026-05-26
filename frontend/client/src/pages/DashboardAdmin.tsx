@@ -3,6 +3,7 @@ import { LogOut, Bell, Settings, Search, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocation } from 'wouter';
+import { authService } from '@/services/authService'; // <-- IMPORT INI WAJIB
 
 /**
  * Dashboard Admin Page
@@ -32,16 +33,47 @@ const generateRandomCustomers = () => {
 
 export default function DashboardAdmin() {
   const [, setLocation] = useLocation();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [adminName, setAdminName] = useState('Admin');
-  const [adminEmail, setAdminEmail] = useState('admin@bankjateng.co.id');
+  
+  // --- 1. STATE GERBANG KEAMANAN ---
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [adminName, setAdminName] = useState('Memuat...');
+  const [adminEmail, setAdminEmail] = useState('Memuat...');
+
+  // --- 2. PROSES PENGECEKAN (SATPAM) ---
   useEffect(() => {
-    const savedName = localStorage.getItem('adminName');
-    const savedEmail = localStorage.getItem('adminEmail');
-    if (savedName) setAdminName(savedName);
-    if (savedEmail) setAdminEmail(savedEmail);
-  }, []);
+    const verifyWithServer = async () => {
+      try {
+        // Kirim token ke backend, backend yang ngecek role-nya
+        const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+        console.log('API URL:', API);
+        console.log('Token:', authService.getToken());
+
+        const res = await fetch(`${API}/admin/dashboard`, {
+          headers: { 'Authorization': `Bearer ${authService.getToken()}` }
+        });
+
+        console.log('Status:', res.status);
+
+        if (!res.ok) {
+          authService.logout();
+          setLocation('/login-admin');
+          return;
+        }
+
+        const currentUser = authService.getCurrentUser();
+        setIsAuthorized(true);
+        setAdminName(currentUser?.full_name || 'Admin');
+        setAdminEmail(currentUser?.email || '');
+
+      } catch {
+        setLocation('/login-admin');
+      }
+    };
+
+    verifyWithServer();
+  }, [setLocation]);
 
   const [customers] = useState(generateRandomCustomers());
 
@@ -50,6 +82,17 @@ export default function DashboardAdmin() {
     customer.accountNumber.includes(searchTerm)
   );
 
+  // --- 3. PENGUNCI LAYAR ---
+  // Jika gerbang belum dibuka (sedang loading/ditolak), tampilkan layar kosong
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500 font-medium">Memeriksa otorisasi...</p>
+      </div>
+    );
+  }
+
+  // --- 4. TAMPILAN DASHBOARD (Hanya muncul jika isAuthorized = true) ---
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       {/* Header */}
@@ -91,8 +134,7 @@ export default function DashboardAdmin() {
 
             <button
               onClick={() => {
-                localStorage.removeItem('adminName');
-                localStorage.removeItem('adminEmail');
+                authService.logout(); // Hapus token dari memori saat logout
                 setLocation('/login-admin');
               }}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -208,4 +250,4 @@ export default function DashboardAdmin() {
       </div>
     </div>
   );
-}
+};
