@@ -82,18 +82,32 @@ export const sendMessage = async (req, res) => {
         console.log(contextData || "KOSONG");
         console.log("---------------------");
 
-        // 4. Panggil Ollama
-        const ollamaRes = await axios.post('http://host.docker.internal:11434/api/chat', {
-            model: "dolphin-llama3", 
+        // 4. Panggil server model eksternal (configurable via env)
+        // Atur MODEL_API_URL dan MODEL_NAME di backend/.env jika ingin pakai server lokal lain
+        const MODEL_API_URL = process.env.MODEL_API_URL || 'http://host.docker.internal:11434/api/chat';
+        const MODEL_NAME = process.env.MODEL_NAME || 'dolphin-llama3';
+
+        const modelReqBody = {
+            model: MODEL_NAME,
             messages: messagesForAI,
             stream: false,
-            options: { 
-                temperature: 0.1, // Sangat kaku, tidak boleh improvisasi
+            options: {
+                temperature: 0.1,
                 top_p: 0.1
             }
-        });
+        };
 
-        const botResponse = ollamaRes.data.message.content;
+        const modelRes = await axios.post(MODEL_API_URL, modelReqBody, { timeout: 120000 });
+
+        // Beberapa server (Ollama) merespon di `data.message.content`, sementara lain
+        // mungkin langsung mengembalikan `data`. Kita ambil respons yang tersedia.
+        let botResponse = '';
+        if (modelRes.data) {
+            if (modelRes.data.message && modelRes.data.message.content) botResponse = modelRes.data.message.content;
+            else if (typeof modelRes.data === 'string') botResponse = modelRes.data;
+            else if (modelRes.data.generated_text) botResponse = modelRes.data.generated_text;
+            else botResponse = JSON.stringify(modelRes.data);
+        }
 
         // 5. Simpan Log Chat (User & Assistant)
         await pool.query('INSERT INTO chat_logs (user_id, role, message) VALUES ($1, $2, $3)', [userId, 'user', message]);

@@ -2,10 +2,10 @@ import { ChromaClient } from "chromadb";
 import { DefaultEmbeddingFunction } from "@chroma-core/default-embed";
 
 // Pastikan pakai localhost:8000 kalau jalanin dari CMD Windows
-const client = new ChromaClient({ 
-    host: "chroma", // Pakai "chroma" karena dijalankan via docker exec
-    port: 8000 
-});
+// Dukung koneksi lokal atau dari dalam container melalui env CHROMA_URL
+import 'dotenv/config';
+const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';
+const client = new ChromaClient({ path: CHROMA_URL });
 const embedder = new DefaultEmbeddingFunction();
 
 async function seed() {

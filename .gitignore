@@ -2,6 +2,7 @@
 backend/node_modules/
 backend/chroma_data/
 backend/.env
+backend/.venv_chroma/
 
 # --- FRONTEND ---
 frontend/node_modules/
@@ -11,3 +12,12 @@ frontend/.env.local
 
 # --- ROOT ---
 node_modules/ 
+bin/
+lib/
+include/
+share/
+pyvenv.cfg
+chroma_db_lokal/
+SOP_Bank_Jateng.pdf
+text-generation-webui/
+*.gguf
