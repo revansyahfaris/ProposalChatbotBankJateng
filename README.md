@@ -143,3 +143,6 @@ Backend akan menyajikan hasil build frontend dari `frontend/dist/public`.
 
 - Folder `text-generation-webui/` adalah project terpisah dan tidak wajib untuk menjalankan aplikasi utama ini.
 - File seperti model `.gguf`, cache Chroma, dan environment lokal sebaiknya tidak di-commit ke Git.
+
+
+Link Drive untuk Model: https://drive.google.com/file/d/1n0kXRBUDOWNxp4m8msacVAk7KtEs16Mm/view?usp=sharing
